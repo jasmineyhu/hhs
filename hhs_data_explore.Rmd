@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "HHS Data Exploration"
 output: html_notebook
 ---
 
@@ -7,9 +7,38 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
 
-```{r}
-plot(cars)
+```{r setup}
+library(tidyverse)
+library(jsonlite)
+
+hhs_url <- "https://healthdata.gov/data.json"
+hhs <- fromJSON(hhs_url)
+dat <- hhs$dataset
+rm(hhs)
 ```
+```{r view_hhs}
+dat <- dat %>%
+  select(-accessLevel, -landingPage, -`@type`)
+dat <- rename_with(dat, ~ tolower(gsub(".","_", .x, fixed = TRUE)))
+dat
+```
+
+
+```{r get_flu}
+flu_info <- dat %>%
+  filter(str_detect(title, "Influenza Vaccination Coverage for All Ages"))
+flu_dat <- fromJSON(flu_info$identifier)
+flu <- flu_dat$columns %>%
+  unnest(cols = c(cachedContents, format)) %>%
+  rename(smallest_count = count) 
+flu
+```
+```{r}
+flu %>%
+  unnest(cols = top)
+
+```
+
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
